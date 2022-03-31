@@ -16,7 +16,7 @@ int width = 0;
 int height = 0;
 
 bool hasSamePoint(Vec4f one, Vec4f two){
-    int gap = 10;
+    int gap = 5;
     double dist1 = (one[0] - two[0]) * (one[0] - two[0]) + (one[1] - two[1]) * (one[1] - two[1]);
     double dist2 = (one[0] - two[2]) * (one[0] - two[0]) + (one[1] - two[1]) * (one[3] - two[3]);
     double dist3 = (one[2] - two[0]) * (one[2] - two[0]) + (one[3] - two[1]) * (one[3] - two[1]);
@@ -107,8 +107,8 @@ vector<vector<Vec4f>> fillterDoors(vector<Vec4f> v_lines, vector<Vec4f> h_lines)
         vector<Vec4f> temp_door;
         for (int j = 0; j < v_lines.size(); ++j) {
             if(hasSamePoint(h_lines.at(i), v_lines.at(j))){
-                if(temp_door.size()>=2)
-                    break;
+                //if(temp_door.size()>=2)
+                    //break;
                 temp_door.push_back(v_lines.at(j));
             }
         }
@@ -123,6 +123,7 @@ vector<vector<Vec4f>> fillterDoors(vector<Vec4f> v_lines, vector<Vec4f> h_lines)
 
             doors_index++;
         }
+        result_lines.clear();
         temp_door.clear();
     }
 
@@ -160,7 +161,7 @@ void DrawLines(string windowName, vector<Vec4f> lines, Mat img){
         {
             Vec4i l = lines[i];
             //line( cdstP, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,0,255), 3, LINE_AA);
-            line( img, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,255,0), 3, LINE_AA);
+            line( img, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,0,255), 3, LINE_AA);
         }
         imshow(windowName, img);
     }
@@ -175,11 +176,14 @@ void DrawDoors(string windowName, vector<vector<Vec4f>> doors, Mat img){
         for( size_t i = 0; i < doors.size(); i++ )
         {
             vector<Vec4f> l = doors[i];
+            if(l.size()>)
+            printf("l:%d\n", l.size());
+            cv::RNG rng(time(0));
 
             for (int j = 0; j < l.size(); ++j) {
                 Vec4f ll = l[j];
-                //line( cdstP, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,0,255), 3, LINE_AA);
-                line( img, Point(ll[0], ll[1]), Point(ll[2], ll[3]), Scalar(0,255,0), 3, LINE_AA);
+                //line( img, Point(ll[0], ll[1]), Point(ll[2], ll[3]), cv::Scalar(rng.uniform(0,255)/255,rng.uniform(0,255)/255,rng.uniform(0,255)/255), 3, LINE_AA);
+                line( img, Point(ll[0], ll[1]), Point(ll[2], ll[3]), cv::Scalar(1, 0, 0), 3, 0);
             }
 
         }
@@ -191,7 +195,7 @@ void DrawDoors(string windowName, vector<vector<Vec4f>> doors, Mat img){
 int main(int argc, char** argv)
 {
 
-    Mat image = imread("/home/chan/img/Wall_Line_DEBUG_undist03.bin.png", IMREAD_GRAYSCALE);
+    Mat image = imread("/home/chan/Documents/dataset/findDoors/undistor/img/Wall_Line_DEBUG_undist00.bin.png", IMREAD_GRAYSCALE);
     if( image.empty() )
     {
         printf("image load error! \n");
@@ -216,13 +220,13 @@ int main(int argc, char** argv)
     // Probabilistic Line Transform
     vector<Vec4f> linesP; // will hold the results of the detection
     HoughLinesP(dst, linesP, 1, CV_PI/180, 50, 50, 10 ); // runs the actual detection
-    DrawLines("all lines", linesP, image_all_lines);
+    //DrawLines("all lines", linesP, image_all_lines);
     printf("linesP size = %d \n", linesP.size());
 
     //fillter Vertical lines
     vector<Vec4f> v_lines, h_lines;
     FillterVerticalLines(linesP, &v_lines, &h_lines);
-    DrawLines("vertical lines", v_lines, image_copy_p);
+    //DrawLines("vertical lines", v_lines, image_copy_p);
 
     //fillter doors
     vector<vector<Vec4f>> doors = fillterDoors(v_lines, h_lines);
