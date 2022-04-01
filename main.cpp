@@ -18,6 +18,55 @@ int height = 0;
 
 static int temp = 0;
 
+typedef struct
+{
+    float x;
+    float y;
+}AM_xy;
+typedef struct
+{
+    float angle;
+    float radius;
+}normal_line_t;
+
+inline double pi_to_pi(double angle)
+{
+    angle = fmod(angle, 2 * M_PI);
+    if (angle >= M_PI)
+        angle -= 2 * M_PI;
+    return angle;
+}
+
+normal_line_t calculate_normal_line(AM_xy p1,AM_xy p2)
+{
+    normal_line_t line;
+    double slope;
+    if (fabs(p2.x - p1.x) > 1e-9)
+    {
+        slope = (p2.y - p1.y) / (p2.x - p1.x);
+        line.angle = pi_to_pi(atan(slope) + M_PI/2);
+    }
+    else
+    {
+        line.angle = 0.0;
+    }
+
+    line.radius = p1.x * cos(line.angle) + p1.y * sin(line.angle);
+    if (line.radius < 0)
+    {
+        line.radius = -line.radius;
+        line.angle = pi_to_pi(line.angle + M_PI);
+    }
+    return line;
+}
+
+float dist_point_to_line(normal_line_t line,AM_xy point)
+{
+    float p_rad = sqrt(pow(point.x, 2) + pow(point.y, 2));
+    float p_ang = atan2(point.y, point.x);
+    return fabs(p_rad * cos(p_ang - line.angle) - line.radius);
+}
+
 int showTempResult(vector<Vec4f> lines){
     Mat image = imread(IMAGEPATH, IMREAD_GRAYSCALE);
     string windowNamee = "image" + to_string(temp++);
@@ -30,7 +79,7 @@ int showTempResult(vector<Vec4f> lines){
 }
 
 bool hasSamePoint(Vec4f one, Vec4f two){
-    int gap = 100;
+    int gap = 400;
     double dist1 = (one[0] - two[0]) * (one[0] - two[0]) + (one[1] - two[1]) * (one[1] - two[1]);
     double dist2 = (one[0] - two[2]) * (one[0] - two[2]) + (one[1] - two[3]) * (one[1] - two[3]);
     double dist3 = (one[2] - two[0]) * (one[2] - two[0]) + (one[3] - two[1]) * (one[3] - two[1]);
@@ -59,7 +108,25 @@ bool isVertical(Vec4f twoPoints){
     return 0;
 }
 
-bool isVerticalLines(Vec4i twoPoints){
+bool isVerticalLines(Vec4f twoPoints){
+    float distt = 10;
+    AM_xy pp1, pp2, ppc;
+    pp1.x = twoPoints[0];
+    pp1.y = twoPoints[1];
+    pp2.x = twoPoints[2];
+    pp2.y = twoPoints[3];
+    ppc.x = CX;
+    ppc.y = CY;
+
+    normal_line_t lineee = calculate_normal_line(pp1, pp2);
+    float dist = dist_point_to_line(lineee, ppc);
+
+    if(dist <= distt){
+        return 1;
+    }
+
+    return 0;
+    /*
     int angle = 10;
     Point2f pt1(twoPoints[0], twoPoints[1]);
     Point2f pt2(twoPoints[2], twoPoints[3]);
@@ -73,7 +140,8 @@ bool isVerticalLines(Vec4i twoPoints){
     if(anglep1p3 <= angle){
         return 1;
     }
-    return 0;
+    return 0;*/
+
 }
 
 bool isNearBoard(Vec4f twoPoints){
@@ -234,7 +302,10 @@ int main(int argc, char** argv)
     Mat dst;
 
     // Edge detection
-    Canny(image, dst, 50, 200, 3);
+    //Canny(image, dst, 50, 200, 3);
+    Canny(image, dst, 50, 800, 5);
+
+    imshow("canny", dst);
 
     // Probabilistic Line Transform
     vector<Vec4f> linesP; // will hold the results of the detection
@@ -245,7 +316,7 @@ int main(int argc, char** argv)
     //fillter Vertical lines
     vector<Vec4f> v_lines, h_lines;
     FillterVerticalLines(linesP, &v_lines, &h_lines);
-    //DrawLines("vertical lines", v_lines, image_copy_p);
+    DrawLines("vertical lines", v_lines, image_copy_p);
 
     //fillter doors
     vector<vector<Vec4f>> doors = fillterDoors(v_lines, h_lines);
