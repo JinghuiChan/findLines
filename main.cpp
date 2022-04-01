@@ -12,17 +12,32 @@ using namespace cv::ximgproc;
 #define CY 130.649704
 #define PI 3.1415926
 #define distBoarder 10
+string IMAGEPATH = "/home/chan/Documents/dataset/findDoors/undistor/img/Wall_Line_DEBUG_undist07.bin.png";
 int width = 0;
 int height = 0;
 
+static int temp = 0;
+
+int showTempResult(vector<Vec4f> lines){
+    Mat image = imread(IMAGEPATH, IMREAD_GRAYSCALE);
+    string windowNamee = "image" + to_string(temp++);
+
+    for(int i = 0;i < lines.size(); i++){
+        printf("%s[(%f,%f),(%f,%f)]\n", windowNamee.c_str(), lines.at(i)[0], lines.at(i)[1], lines.at(i)[2], lines.at(i)[3]);
+        line( image, Point(lines.at(i)[0], lines.at(i)[1]), Point(lines.at(i)[2], lines.at(i)[3]), Scalar(0,0,255), 3, LINE_AA);
+    }
+    imshow(windowNamee, image);
+}
+
 bool hasSamePoint(Vec4f one, Vec4f two){
-    int gap = 5;
+    int gap = 100;
     double dist1 = (one[0] - two[0]) * (one[0] - two[0]) + (one[1] - two[1]) * (one[1] - two[1]);
-    double dist2 = (one[0] - two[2]) * (one[0] - two[0]) + (one[1] - two[1]) * (one[3] - two[3]);
+    double dist2 = (one[0] - two[2]) * (one[0] - two[2]) + (one[1] - two[3]) * (one[1] - two[3]);
     double dist3 = (one[2] - two[0]) * (one[2] - two[0]) + (one[3] - two[1]) * (one[3] - two[1]);
     double dist4 = (one[2] - two[2]) * (one[2] - two[2]) + (one[3] - two[3]) * (one[3] - two[3]);
 
     if(dist1 <= gap || dist2 <= gap || dist3 <= gap || dist4 <= gap){
+
         return 1;
     }
     return 0;
@@ -119,6 +134,7 @@ vector<vector<Vec4f>> fillterDoors(vector<Vec4f> v_lines, vector<Vec4f> h_lines)
             for (int j = 0; j < temp_door.size(); ++j) {
                 result_lines.push_back(temp_door.at(j));
             }
+            showTempResult(result_lines);
             doors.push_back(result_lines);
 
             doors_index++;
@@ -176,7 +192,10 @@ void DrawDoors(string windowName, vector<vector<Vec4f>> doors, Mat img){
         for( size_t i = 0; i < doors.size(); i++ )
         {
             vector<Vec4f> l = doors[i];
-            if(l.size()>)
+            //vector<Vec4f> l = doors[0];
+            if(l.size()>3){
+                //continue;
+            }
             printf("l:%d\n", l.size());
             cv::RNG rng(time(0));
 
@@ -195,7 +214,7 @@ void DrawDoors(string windowName, vector<vector<Vec4f>> doors, Mat img){
 int main(int argc, char** argv)
 {
 
-    Mat image = imread("/home/chan/Documents/dataset/findDoors/undistor/img/Wall_Line_DEBUG_undist00.bin.png", IMREAD_GRAYSCALE);
+    Mat image = imread(IMAGEPATH, IMREAD_GRAYSCALE);
     if( image.empty() )
     {
         printf("image load error! \n");
@@ -220,7 +239,7 @@ int main(int argc, char** argv)
     // Probabilistic Line Transform
     vector<Vec4f> linesP; // will hold the results of the detection
     HoughLinesP(dst, linesP, 1, CV_PI/180, 50, 50, 10 ); // runs the actual detection
-    //DrawLines("all lines", linesP, image_all_lines);
+    DrawLines("all lines", linesP, image_all_lines);
     printf("linesP size = %d \n", linesP.size());
 
     //fillter Vertical lines
